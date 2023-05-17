@@ -1,54 +1,111 @@
 #!/bin/sh
 
-#This function verify is the package name is correct
-# No spaces and other requirements
-fn_verifyPackage() {
-    pkgName="$@"
-    goldsteinExtension="gds"
-
-    #Checking for file extension
-    if ! echo "$pkgName" | grep "\b${goldsteinExtension}\b"; then
-        printf '%s\n' "The file extension should be ${goldsteinExtension}"
-        exit 1
-    fi
-
-    #Checking for spaces in package name
-    if echo $pkgName | grep -qE "[[:space:]]+"; then
-        printf "Don't use spaces on your package name\n"
-        exit 1
-    fi
-
-    #Checking hyphen count
-    hyphenCount=$(echo "${pkgName}" | grep -qo "-" | wc -l)
-    if [ "$hyphenCount" -lt '2' ] || [ "$hyphenCount" -gt '2' ]; then
-        printf '%s\n' "Too much hyphens! follow the pattern"
-        printf '%s\n' "packagename-version-build"
-        exit 1
-    fi
-
-}
+# Removing unicode support for better performance
+export version='1.0'
+export LC_ALL=C
+export LANG=c
+export VERBOSE=0 
+# Global variables
+goldsteinExtension="gds"
 
 # This function creates .gds packages
 fn_createPkg() {
     pkgName="$1"
+	
+	if [ "$VERBOSE" = '1' ];then
+		if	tar -cvf ..${pkgName} .; then
+			printf '%s\n' "Package createad ../${pkgName}"
+		else
+			printf '%s\n' "Couldn't crete ${pkgName}"
+		fi
+	else
 
-    if tar -cvf ../${pkgName} .; then
-        printf '%s\n' "Package createad ../${pkgWithGoldsteinExtension}"
-        return 0
-    else
-        printf '%s\n' "Couldn't crete ${pkgWithGoldsteinExtension}"
-        exit 1
-    fi
+		if tar -cf ../${pkgName} .; then
+			printf '%s\n' "Package createad ../${pkgName}.gds"
+			return 0
+		else
+			printf '%s\n' "Couldn't crete ${pkgName}.gds"
+			exit 1
+		fi
+
+	fi
+
 }
 
-case "$1" in
+# This function verify is the package name is correct
+# No spaces and other requirements
+fn_verifyPackage() {
+	pkgName="$@"
+
+	#Checking for file extension
+	if ! echo "$pkgName" | grep "\b${goldsteinExtension}\b"; then
+		printf '%s\n' "The file extension should be ${goldsteinExtension}"
+		exit 1
+	fi
+
+	#Checking for spaces in package name
+	if echo $pkgName | grep -qE "[[:space:]]+"; then
+		printf "Don't use spaces on your package name\n"
+		exit 1
+	fi
+
+	#Checking hyphen count
+	hyphenCount=$(echo "${pkgName}" | grep -o "-" | wc -l)
+	if [ "$hyphenCount" -lt 2 ] || [ "$hyphenCount" -gt 2 ]; then
+		printf '%s\n' "Use 2 hyphens! follow the pattern"
+		printf '%s\n' "packagename-version-build.gds"
+		exit 1
+	fi
+
+}
+
+fn_usage(){
+	cat << EOF
+goldstein-create - Designed by Marco Tulio (marcot.dns@gmail.com)
+	
+create, -c - Creates the package without using verbose, you should be in the root
+directory of the package.
+verbose, -v -  Creates the package using verbose	
+EOF
+
+}
+
+if [ -z "$1" ]; then
+	fn_usage
+fi
+
+while [ -n "$1" ]; do
+	case "$1" in
+		create|-c)
+			CMD=$1
+			shift
+		;;
+
+		verbose|-v)
+			VERBOSE=1
+			shift
+		;; 
+
+		*.gds)
+			PKG=$1
+			shift
+		;;
+
+		*) 
+			fn_usage
+			exit 1
+		;;
+	esac
+done
+
+
+
+case "$CMD" in
 create | -c)
-    shift                # Taking package name
-    if [ -z "$1" ]; then #If $1 is null
+    if [ -z "$CMD" ]; then #If $1 is null
         printf '%s\n' "Package name is null"
         exit 1
     fi
-    fn_verifyPackage "$@" #Veryfing prerequisites
-    fn_createPkg "$@"
-    ;;
+    fn_verifyPackage "$PKG" #Veryfing prerequisites
+    fn_createPkg "$PKG"
 esac
