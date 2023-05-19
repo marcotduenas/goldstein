@@ -1,0 +1,45 @@
+#!/bin/sh
+#AUTHOR: Marco Tulio Duenas
+#VERSION: 1.0
+#DESCRIPTION: Tool to install packages created by goldstein-create, it generates tracking folder
+#LICENSE: GPLv3
+#DATE: 2023-05-19
+
+
+# Creating tracking folder
+TRACK='/var/log/goldstein_packages'
+[ ! -d "$TRACK" ] && mkdir -v "$TRACK" 
+
+# Functions
+fn_pkgInstall(){
+	local package="$1"
+	pkgName=$(basename $package | cut -f1 -d '-')
+	printf "Installing $pkgName...\n"
+
+	if tar xvf "$package" -C / >> "${TRACK}/${pkgName}.track"; then
+		printf "Package $pkgName installed\n"
+	else
+		printf "Could not install $pkgName\n"
+		exit 1
+	fi
+
+	#Removing ./ and empty lines
+	if sed -i 's@\.\/@@g; /^$/d' "${TRACK}/${pkgName}.track"; then
+		printf "Cleaning done\n"
+	else
+		printf "Error cleaning installation\n"
+	fi
+
+}
+	
+case "$1" in
+	-i| --instal)
+		shift
+		if [ -e "$1" ]; then
+			fn_pkgInstall "$1"
+		else
+			printf "Package does not exists!\n"
+			exit 1
+		fi
+	;;
+esac
