@@ -1,45 +1,71 @@
 #!/bin/sh
 #AUTHOR: Marco Tulio Duenas
-#VERSION: 1.0
+#VERSION: 1.1
 #DESCRIPTION: Tool to install packages created by goldstein-create, it generates tracking folder
 #LICENSE: GPLv3
 #DATE: 2023-05-19
-
+#CHANGELOG:
+# 1.1:
+#	- Support for installing multiple packages
+#	- Support for installing multiple packages
 
 # Creating tracking folder
 TRACK='/var/log/goldstein_packages'
-[ ! -d "$TRACK" ] && mkdir -v "$TRACK" 
+[ ! -d "$TRACK" ] && mkdir -v "$TRACK"
 
 # Functions
-fn_pkgInstall(){
+fn_pkgInstall() {
 	local package="$1"
 	pkgName=$(basename $package | cut -f1 -d '-')
 	printf "Installing $pkgName...\n"
 
-	if tar xvf "$package" -C / >> "${TRACK}/${pkgName}.track"; then
+	if tar xvf "$package" -C / >>"${TRACK}/${pkgName}.track"; then
 		printf "Package $pkgName installed\n"
 	else
 		printf "Could not install $pkgName\n"
 		exit 1
 	fi
 
-	#Removing ./ and empty lines
-	if sed -i 's@\.\/@@g; /^$/d' "${TRACK}/${pkgName}.track"; then
+	#Removing ./, empty lines, and information file garbage
+	if sed -i 's@\.\/@@g; /^$/d; /^data\/$/d; /^data\/info$/d' "${TRACK}/${pkgName}.track"; then
 		printf "Cleaning done\n"
 	else
 		printf "Error cleaning installation\n"
 	fi
 
 }
+
+fn_packageInfo() {
+	local pkgName="$@"
+	local tempDir=$(mktemp -d)
+	#Verify if the info file exists
+	if tar tf "$pkgName" "./data/info" 1> /dev/null 2> /dev/null; then
+		if tar xf "$pkgName" -C "${tempDir}" "./data/info" 2> /dev/null; then
+			. "${tempDir}/data/info"
+			printf "PACKAGE INFO\n"
+			printf "Mantainer  : $mantainer\n"
+			printf "Package	   : $package\n"
+			printf "Description: $desc\n"
+			printf "URL        : $URL\n\n"
+		fi
+	fi
 	
+	[ -e "$tempDir" ] && { rm -r "${tempDir}" ;}
+}
+
 case "$1" in
-	-i| --instal)
-		shift
+-i | --instal)
+	shift
+	while [ -n "$1" ]; do
 		if [ -e "$1" ]; then
+			fn_packageInfo "$1"
 			fn_pkgInstall "$1"
+			shift
+			continue
 		else
 			printf "Package does not exists!\n"
 			exit 1
 		fi
+	done
 	;;
 esac

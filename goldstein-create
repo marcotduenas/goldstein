@@ -1,11 +1,19 @@
 #!/bin/sh
 
+#AUHTOR: Marco Tulio Duenas
+#VERSION: 1.1
+#DESCRIPTION: Tool to create .gds packages
+#LICENSE: GPLv3
+#DATE: 05-20-2023
+#CHANGELOG:
+#	1.1: Data directory with informations about package
+
+
 # Removing unicode support for better performance
 export version='1.0'
 export LC_ALL=C
 export LANG=c
 export VERBOSE=0 
-# Global variables
 goldsteinExtension="gds"
 
 # This function creates .gds packages
@@ -13,7 +21,7 @@ fn_createPkg() {
     pkgName="$1"
 	
 	if [ "$VERBOSE" = '1' ];then
-		if	tar -cvf ..${pkgName} .; then
+		if	tar -cvf ../${pkgName} .; then
 			printf '%s\n' "Package createad ../${pkgName}"
 		else
 			printf '%s\n' "Couldn't crete ${pkgName}"
@@ -70,6 +78,16 @@ EOF
 
 }
 
+fn_packageData(){
+	mkdir -v data
+	cat << EOF > data/info
+#Mantainer='Marco Tulio Duenas'
+#Package name =''
+#Desc=''                                                                                                             
+#URL=''
+EOF
+}
+
 if [ -z "$1" ]; then
 	fn_usage
 fi
@@ -77,9 +95,15 @@ fi
 while [ -n "$1" ]; do
 	case "$1" in
 		create|-c)
-			CMD=$1
+			CMD="$1"
 			shift
 		;;
+	
+		package-data|-p)
+			CMD="package-data"
+			shift
+		;;	
+
 
 		verbose|-v)
 			VERBOSE=1
@@ -87,7 +111,7 @@ while [ -n "$1" ]; do
 		;; 
 
 		*.gds)
-			PKG=$1
+			PKG="$1"
 			shift
 		;;
 
@@ -101,11 +125,16 @@ done
 
 
 case "$CMD" in
-create | -c)
-    if [ -z "$CMD" ]; then #If $1 is null
-        printf '%s\n' "Package name is null"
-        exit 1
-    fi
-    fn_verifyPackage "$PKG" #Veryfing prerequisites
-    fn_createPkg "$PKG"
+	create | -c)
+	if [ -z "$CMD" ]; then #If $1 is null
+			printf '%s\n' "Package name is null"
+			exit 1
+		fi
+		fn_verifyPackage "$PKG" #Veryfing prerequisites
+		fn_createPkg "$PKG"
+	;;
+
+	package-data| -p)
+		fn_packageData
+	;;
 esac
