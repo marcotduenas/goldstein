@@ -2,7 +2,7 @@
 > Big brother is watching you!
 
 
-**Goldstein** is an simple and low-level  package manager. It was written entirely in shell script.
+**Goldstein** is an simple and low-level package manager. It was written entirely in shell script and tries to be portable as much as possible.
 
 # Installation
 # Basic Usage

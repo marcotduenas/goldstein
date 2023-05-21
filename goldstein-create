@@ -1,27 +1,24 @@
 #!/bin/sh
-
 #AUHTOR: Marco Tulio Duenas
-#VERSION: 1.1
+#VERSION: 1.2
 #DESCRIPTION: Tool to create .gds packages
 #LICENSE: GPLv3
-#DATE: 05-20-2023
+#LAST MODIFICATION DATE: 05-20-2023
 #CHANGELOG:
-#	1.1: Data directory with informations about package
-
+#	1.1: Adding -p option for create a simple template for the mantainer insert informations about the package
 
 # Removing unicode support for better performance
-export version='1.0'
 export LC_ALL=C
 export LANG=c
-export VERBOSE=0 
+export VERBOSE=0
 goldsteinExtension="gds"
 
 # This function creates .gds packages
 fn_createPkg() {
-    pkgName="$1"
-	
-	if [ "$VERBOSE" = '1' ];then
-		if	tar -cvf ../${pkgName} .; then
+	pkgName="$1"
+
+	if [ "$VERBOSE" = '1' ]; then
+		if tar -cvf ../${pkgName} .; then
 			printf '%s\n' "Package createad ../${pkgName}"
 		else
 			printf '%s\n' "Couldn't crete ${pkgName}"
@@ -29,10 +26,10 @@ fn_createPkg() {
 	else
 
 		if tar -cf ../${pkgName} .; then
-			printf '%s\n' "Package createad ../${pkgName}.gds"
+			printf '%s\n' "Package createad ../${pkgName}"
 			return 0
 		else
-			printf '%s\n' "Couldn't crete ${pkgName}.gds"
+			printf '%s\n' "Couldn't crete ${pkgName}"
 			exit 1
 		fi
 
@@ -67,8 +64,8 @@ fn_verifyPackage() {
 
 }
 
-fn_usage(){
-	cat << EOF
+fn_usage() {
+	cat <<EOF
 goldstein-create - Designed by Marco Tulio (marcot.dns@gmail.com)
 	
 create, -c - Creates the package without using verbose, you should be in the root
@@ -78,9 +75,9 @@ EOF
 
 }
 
-fn_packageData(){
+fn_packageData() {
 	mkdir -v data
-	cat << EOF > data/info
+	cat <<EOF >data/info
 #Mantainer='Marco Tulio Duenas'
 #Package name =''
 #Desc=''                                                                                                             
@@ -94,47 +91,44 @@ fi
 
 while [ -n "$1" ]; do
 	case "$1" in
-		create|-c)
+		create | -c)
 			CMD="$1"
 			shift
 		;;
-	
-		package-data|-p)
+
+		package-data | -p)
 			CMD="package-data"
 			shift
-		;;	
+		;;
 
-
-		verbose|-v)
+		verbose | -v)
 			VERBOSE=1
 			shift
-		;; 
+		;;
 
 		*.gds)
 			PKG="$1"
 			shift
 		;;
 
-		*) 
+		*)
 			fn_usage
 			exit 1
 		;;
 	esac
 done
 
-
-
 case "$CMD" in
-	create | -c)
+create | -c)
 	if [ -z "$CMD" ]; then #If $1 is null
-			printf '%s\n' "Package name is null"
-			exit 1
-		fi
-		fn_verifyPackage "$PKG" #Veryfing prerequisites
-		fn_createPkg "$PKG"
+		printf '%s\n' "Package name is null"
+		exit 1
+	fi
+	fn_verifyPackage "$PKG" #Veryfing prerequisites
+	fn_createPkg "$PKG"
 	;;
 
-	package-data| -p)
-		fn_packageData
+package-data | -p)
+	fn_packageData
 	;;
 esac

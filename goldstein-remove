@@ -1,0 +1,50 @@
+#!/bin/sh
+#AUTHOR: Marco Tulio Duenas
+#VERSION: 1.0
+#DESCRIPTION: Tool to remove packages installed by goldstein-install
+#LICENSE: GPLv3
+#LAST MODIFICATION DATE: 2023-05-21
+export LC_ALL=C
+export LANG=c
+
+TRACK_DIR='/var/log/goldstein_packages'
+
+fn_pkgRemove() {
+    local package="$1"
+
+    # Removing files
+    while IFS= read files; do
+        if [ -f "/$files" ]; then
+            rm "/$files" 2>/dev/null && printf "Removed file: $files\n" # Removing files
+        elif [ -L "/$files" ]; then
+            unlink "/$symlink" 1>/dev/null 2>/dev/null && printf "Unlinked: $symlink\n" # Removing symlinks
+        fi
+    done <"$package"
+
+    # Removing directories
+    while IFS= read dir; do
+        rm -d "/$dir" 1>/dev/null 2>/dev/null && printf "Removed dir: $dir\n"
+    done <"$package"
+
+    # Removing track file
+    rm -v "$package"
+}
+
+# Check if use wrote the package name
+[ -z $1 ] && { printf "No package name found"; exit 1; }
+
+cd "$TRACK_DIR"
+
+#Listing track files, if $?=0 pkgToRemove receive the name of the track file and goes to fn_pkgRemove
+while [ -n "$1" ]; do
+    count='0'
+    for trackFile in *; do
+        if printf "$trackFile" | grep -wq "$1"; then
+            pkgToRemove="$trackFile"
+            fn_pkgRemove "$pkgToRemove"
+            count=$((count + 1))
+            shift
+        fi
+    done
+    [ "$count" -lt '1' ] && { echo "$1" não encontrado; shift; continue; }
+done

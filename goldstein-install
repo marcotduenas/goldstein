@@ -3,11 +3,14 @@
 #VERSION: 1.1
 #DESCRIPTION: Tool to install packages created by goldstein-create, it generates tracking folder
 #LICENSE: GPLv3
-#DATE: 2023-05-19
+#LAST MODIFICATION DATE: 2023-05-21
 #CHANGELOG:
 # 1.1:
 #	- Support for installing multiple packages
-#	- Support for installing multiple packages
+#	- Implementing pack information file
+
+export LC_ALL=C
+export LANG=c
 
 # Creating tracking folder
 TRACK='/var/log/goldstein_packages'
@@ -15,11 +18,18 @@ TRACK='/var/log/goldstein_packages'
 
 # Functions
 fn_pkgInstall() {
-	local package="$1"
-	pkgName=$(basename $package | cut -f1 -d '-')
+	local packageFile="$1"
+	pkgName=$(basename "$packageFile" | cut -f1,2 -d '.')
+	if ! [ $(printf "$packageFile" | grep  -E ".*.gds") ];then
+		printf '%s\n' "The file needs to have .gds extension"
+		exit 1
+	fi
+
+	fn_packageInfo "$1" # Function that shows information about the package being installed
+	
 	printf "Installing $pkgName...\n"
 
-	if tar xvf "$package" -C / >>"${TRACK}/${pkgName}.track"; then
+	if tar xvf "$packageFile" -C "$FAKE/" >> "${TRACK}/${pkgName}.track"; then
 		printf "Package $pkgName installed\n"
 	else
 		printf "Could not install $pkgName\n"
@@ -27,11 +37,12 @@ fn_pkgInstall() {
 	fi
 
 	#Removing ./, empty lines, and information file garbage
-	if sed -i 's@\.\/@@g; /^$/d; /^data\/$/d; /^data\/info$/d' "${TRACK}/${pkgName}.track"; then
+	if sed -i 's@\.@@g; /^$/d; /^data\/$/d; /^data\/info$/d' "${TRACK}/${pkgName}.track"; then
 		printf "Cleaning done\n"
 	else
 		printf "Error cleaning installation\n"
 	fi
+
 
 }
 
@@ -39,8 +50,8 @@ fn_packageInfo() {
 	local pkgName="$@"
 	local tempDir=$(mktemp -d)
 	#Verify if the info file exists
-	if tar tf "$pkgName" "./data/info" 1> /dev/null 2> /dev/null; then
-		if tar xf "$pkgName" -C "${tempDir}" "./data/info" 2> /dev/null; then
+	if tar tf "$pkgName" "./data/info" 1>/dev/null 2>/dev/null; then
+		if tar xf "$pkgName" -C "${tempDir}" "./data/info" 2>/dev/null; then
 			. "${tempDir}/data/info"
 			printf "PACKAGE INFO\n"
 			printf "Mantainer  : $mantainer\n"
@@ -49,23 +60,47 @@ fn_packageInfo() {
 			printf "URL        : $URL\n\n"
 		fi
 	fi
-	
-	[ -e "$tempDir" ] && { rm -r "${tempDir}" ;}
+
+	[ -e "$tempDir" ] && { rm -r "${tempDir}"; }
 }
 
-case "$1" in
--i | --instal)
-	shift
-	while [ -n "$1" ]; do
-		if [ -e "$1" ]; then
-			fn_packageInfo "$1"
-			fn_pkgInstall "$1"
-			shift
-			continue
-		else
-			printf "Package does not exists!\n"
-			exit 1
-		fi
-	done
-	;;
-esac
+fn_usage() {
+	cat <<EOF
+goldstein-install - Designed by Marco Tulio (marcot.dns@gmail.com)
+--help or -h - Shows this usage section
+--fake or -f - Installs the package in a custom dir, Example: --fake /mnt/app
+EOF
+
+}
+
+
+if [ "$#" -lt '1' ]; then
+	fn_usage
+	exit 1
+fi
+
+while [ -n "$1" ]; do
+	if [ "$1" = '--fake' ] || [ "$1" = '-f' ]; then
+		shift
+		FAKE="$1"
+		shift
+		break
+	elif
+	[ "$1" = '--help' ] || [ "$1" = '-h' ]; then
+		fn_usage
+		exit 1
+	else
+		break
+	fi
+done
+
+while [ -n "$1" ]; do
+	if [ -e "$1" ]; then
+		fn_pkgInstall "$1"
+		shift
+		continue
+	else
+		printf "Package does not exists!\n"
+		exit 1
+	fi
+done
