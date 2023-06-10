@@ -22,7 +22,7 @@ sudo ./install
 7. Use goldstein-create to create your .gds package. Example: goldstein-create -c nano-7.2-1.gds. **IMPORTANT!** make sure to follow the pattern *'pkgname-version-build.gds'*
 8. cd ../ and then goldstein-install your .gds package. Example goldstein-install nano-7.2.1.gds.
 
-# Basic usage for installing and removing a package a package already built
+# Basic usage for installing and removing a package already built
 ## Installing
 ```
 goldstein-install [package.gds]. Example: goldstein-install nano-7.2-1.gds
