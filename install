@@ -1,0 +1,4 @@
+#!/bin/sh
+
+chmod +x goldstein-*
+mv goldstein-* /usr/sbin
