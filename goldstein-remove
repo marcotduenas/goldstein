@@ -30,8 +30,8 @@ fn_pkgRemove() {
     rm -v "$package"
 }
 
-# Check if use wrote the package name
-[ -z $1 ] && { printf "No package name found"; exit 1; }
+# Check if user wrote the package name
+[ -z $1 ] && { printf "No package found\n"; exit 1; }
 
 cd "$TRACK_DIR"
 
